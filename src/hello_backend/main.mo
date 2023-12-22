@@ -3,10 +3,11 @@ import Iter "mo:base/Iter";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 
-actor {
+actor MicroblogActor {
   public type Message = {
     text : Text;
     time : Time.Time;
+    author : Principal;
   };
 
   public type Microblog = actor {
@@ -15,9 +16,12 @@ actor {
     post : shared (Text) -> async ();
     posts : shared query (Time.Time) -> async [Message];
     timeline : shared (Time.Time) -> async [Message];
+    set_name : shared (Text) -> async ();
+    get_name : shared query () -> async ?Text;
   };
 
   stable var followed : List.List<Principal> = List.nil(); //empty list
+  stable var current_name : Text = "";
 
   public shared func follow(id : Principal) : async () {
     followed := List.push(id, followed);
@@ -34,6 +38,7 @@ actor {
     let newMessage : Message = {
       text = text;
       time = Time.now();
+      author = Principal.fromActor(MicroblogActor);
     };
     messages := List.push(newMessage, messages);
   };
@@ -69,4 +74,15 @@ actor {
 
     List.toArray(all);
   };
+
+  public shared func set_name(name : Text) : async () {
+    // TODO: guard by something like
+    // assert (msg.caller == Principal.fromActor(MicroblogActor));
+    current_name := name;
+  };
+
+  public shared func get_name() : async ?Text {
+    return ?current_name;
+  };
+
 };
