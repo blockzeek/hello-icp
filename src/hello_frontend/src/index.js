@@ -1,19 +1,51 @@
 import { hello_backend } from "../../declarations/hello_backend";
 
-document.querySelector("form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const button = e.target.querySelector("button");
+async function post() {
+  let post_button = document.getElementById("post");
+  post_button.disabled = true;
+  let error = document.getElementById("error");
+  error.innerText = "";
+  let textarea = document.getElementById("message");
+  let text = textarea.value;
+  let otp = document.getElementById("otp").value;
+  try {
+    await hello_backend.post(otp, text);
+    textarea.value = ""
+  } catch (err) {
+    console.log(err);
+    error.innerText = "Post Failed!"
+  }
 
-  const name = document.getElementById("name").value.toString();
+  post_button.disabled = false;
+}
 
-  button.setAttribute("disabled", true);
 
-  // Interact with foo actor, calling the greet method
-  const greeting = await hello_backend.greet(name);
+var num_posts = 0;
+async function load_posts() {
+  let post_section = document.getElementById("posts");
+  let posts = await hello_backend.posts(0);
 
-  button.removeAttribute("disabled");
+  if (num_posts == posts.length) {
+    return;
+  }
 
-  document.getElementById("greeting").innerText = greeting;
+  num_posts = posts.length;
+  post_section.replaceChildren([]);
 
-  return false;
-});
+  for (var i = 0; i < posts.length; i++) {
+    let post = document.createElement('p');
+    // TODO: fix formatting
+    post.innerText += posts[i].text + " at " + posts[i].time;
+    post_section.appendChild(post);
+  }
+
+}
+
+function onload() {
+  let post_button = document.getElementById("post");
+  post_button.onclick = post;
+  load_posts();
+  setInterval(load_posts, 3000);
+}
+
+window.onload = onload
